@@ -141,8 +141,137 @@ GO
 ![image](https://github.com/user-attachments/assets/54138cb7-5627-407b-b738-4f66d644d74d)
 
 
-### **get Inserted Rows (operation =2) **
+### **get Insert /update / delete**
+```sql
 
+create procedure cdc
+as 
+DECLARE @last_lsn BINARY(10);
+
+-- Retrieve the last processed LSN from the control table
+SELECT @last_lsn = LastLSN
+FROM CDC_Control
+WHERE TableName = 'users';
+--print @last_lsn
+
+if @last_lsn is null
+begin
+	SELECT @last_lsn = min(__$start_lsn)	
+	FROM cdc.dbo_Users_CT
+	insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
+
+--print @last_lsn
+	begin tran
+------------- Insert Operation --------------------
+	;WITH LatestInserts AS (
+		SELECT
+		   id, FirstName, LastName, Email, ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
+		FROM cdc.dbo_users_ct
+		WHERE __$operation = 2  --insert operation
+		AND __$start_lsn >= @last_lsn  -- first time >= , then > only
+	) 
+	INSERT INTO dbo.TargetUsers (id, FirstName, LastName, Email)
+	select id, FirstName, LastName, Email from LatestInserts where seq_rank=1
+	---------------------------------------------------
+	-----------update operation -----------------------
+
+
+	;WITH LatestUpdates AS (
+		SELECT
+	*,        ROW_NUMBER() OVER (PARTITION BY ID ORDER BY __$seqval DESC) AS seq_rank
+		FROM cdc.dbo_users_ct
+		WHERE __$operation = 4  -- Update operation
+		AND __$start_lsn >= @Last_LSN  --in the begining , then >
+	)  
+
+	UPDATE tu
+	SET 
+		tu.FirstName = lu.FirstName,
+		tu.LastName = lu.LastName,
+		tu.Email = lu.Email
+    
+	FROM dbo.TargetUsers tu
+	JOIN LatestUpdates lu
+		ON tu.ID = lu.Id
+	WHERE lu.seq_rank = 1;  -- Only the latest version
+
+	-------------------DElete operation-------------------------------
+	;WITH LatestDelete AS (
+		SELECT *,ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
+       
+		 FROM cdc.dbo_users_ct
+		WHERE __$operation in (1,2)  --Delete , insert  operation
+		AND __$start_lsn >= @last_lsn  -- first time >= , then > only
+	) 
+
+	delete tu
+	from dbo.targetusers tu inner join LatestDelete Ld on Ld.id=tu.id  where ld.seq_rank=1 and ld.__$operation=1
+
+	----------------------------------
+	
+	SELECT @last_lsn=  MAX(__$start_lsn) FROM cdc.dbo_users_ct
+
+	insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
+
+	COMMIT TRANSACTION;
+end
+else
+begin
+	begin tran
+	print '> then' 
+	print @last_lsn
+------------- Insert Operation --------------------
+	;WITH LatestInserts AS (
+		SELECT
+		   id, FirstName, LastName, Email, ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
+		FROM cdc.dbo_users_ct
+		WHERE __$operation = 2  --insert operation
+		AND __$start_lsn > @last_lsn  -- first time >= , then > only
+	) 
+	INSERT INTO dbo.TargetUsers (id, FirstName, LastName, Email)
+	select id, FirstName, LastName, Email from LatestInserts where seq_rank=1
+	---------------------------------------------------
+	-----------update operation -----------------------
+
+
+	;WITH LatestUpdates AS (
+		SELECT
+	*,        ROW_NUMBER() OVER (PARTITION BY ID ORDER BY __$seqval DESC) AS seq_rank
+		FROM cdc.dbo_users_ct
+		WHERE __$operation = 4  -- Update operation
+		AND __$start_lsn > @Last_LSN  --in the begining , then >
+	)  
+
+	UPDATE tu
+	SET 
+		tu.FirstName = lu.FirstName,
+		tu.LastName = lu.LastName,
+		tu.Email = lu.Email
+    
+	FROM dbo.TargetUsers tu
+	JOIN LatestUpdates lu
+		ON tu.ID = lu.Id
+	WHERE lu.seq_rank = 1;  -- Only the latest version
+
+	-------------------DElete operation-------------------------------
+	;WITH LatestDelete AS (
+		SELECT *,ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
+       
+		 FROM cdc.dbo_users_ct
+		WHERE __$operation in (1,2)  --Delete , insert  operation
+		AND __$start_lsn > @last_lsn  -- first time >= , then > only
+	) 
+
+	delete tu
+	from dbo.targetusers tu inner join LatestDelete Ld on Ld.id=tu.id  where ld.seq_rank=1 and ld.__$operation=1
+
+	----------------------------------
+	update dbo.cdc_Control set lastLSN=@last_lsn where tablename='Users'
+
+	COMMIT TRANSACTION;
+
+end
+```
 
 
 
