@@ -7,12 +7,36 @@ Transactional databases indeed store all changes in a transaction log. Change Da
 ![image](https://github.com/user-attachments/assets/753324f8-64a9-48fd-81d0-fb97b6df9e7c)
 ## steps to acheive CDC
 we will asume you have a testDB , and we will create a **user** table as source, and the destination will be a **tagetuser**
-### Check for CDC 
+## **step 1: Check for CDC** 
 to check if CDC is enabled on your DB , write the following sql statment
 ```sql
 name,is_cdc_enabled from sys.databases
 ```
 ![image](https://github.com/user-attachments/assets/dc8acc35-41ae-4cbd-a366-b1ef3ff6fcbf)
+
+## **step 2: Creating Table** 
+```sql
+-- Create a Users table 
+CREATE TABLE Users 
+(    
+   ID int NOT NULL PRIMARY KEY,    
+   FirstName varchar(30),    
+   LastName varchar(30),    
+   Email varchar(50) 
+)
+```
+## **step 3: Enabling CDC** 
+- First we need to Enable CDC on DB level
+```sql
+use TestDb
+go
+EXEC sys.sp_cdc_enable_db  
+GO
+```
+![image](https://github.com/user-attachments/assets/c3912b66-844a-459c-b9ad-babda8c9e2c8)
+
+
+- then We have to enable the CDC on the source table, which in our case **users**
 
 
 
