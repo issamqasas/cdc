@@ -120,7 +120,7 @@ FROM
 
 ## **step 5: Loading the Data from Source table to Destination table**
 - create the following tables
-- ```sql
+```sql
   
 CREATE TABLE [dbo].CDC_Control (
 	[ID] [int] NOT NULL primary key (id),
@@ -137,6 +137,10 @@ CREATE TABLE [dbo].[TargetUsers](
 )
 GO
 ```
+- to start the loading of data , we have to start with the first **__$start_lsn**
+![image](https://github.com/user-attachments/assets/54138cb7-5627-407b-b738-4f66d644d74d)
+
+
 
 
 
