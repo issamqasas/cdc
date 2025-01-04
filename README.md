@@ -144,6 +144,9 @@ GO
 ### **get Insert /update / delete**
 ```sql
 
+--Author :- issam qasas
+--date written 4-jan-2025
+
 create procedure cdc
 as 
 DECLARE @last_lsn BINARY(10);
