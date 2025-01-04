@@ -109,6 +109,16 @@ commit
 ```
 ![image](https://github.com/user-attachments/assets/de9b09be-a81e-40db-97a2-3cf8279fc00b)
 
+- you can use the function **sys.fn_cdc_map_lsn_to_time** to convert the lsn to Dattime
+```sql
+SELECT
+CONVERT(dateTime, sys.fn_cdc_map_lsn_to_time(__$start_lsn)) AS TableTimeStamp, *
+FROM
+    cdc.dbo_Users_CT 
+```
+![image](https://github.com/user-attachments/assets/20de07fb-77af-46e1-94b0-4731e62f00ea)
+
+
 
 
 
