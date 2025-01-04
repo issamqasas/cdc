@@ -52,8 +52,8 @@ you can see the new system tables ,
 ![image](https://github.com/user-attachments/assets/671a47c9-01af-448b-b9f8-7fc6b1e801db)
 
 - to check for all tables that have cdc enabled
-  ```sql
-  -- Verify if the table is enabled for CDC
+```sql
+-- Verify if the table is enabled for CDC
 SELECT * FROM cdc.change_tables;
 GO
 ```
@@ -66,10 +66,22 @@ INSERT INTO Users Values (5, 'omar', 'othman', 'omar@yahoo.com')
 INSERT INTO USERS Values (6, 'mohammad', 'sayed', 'mohammad@gmail.com')
 ```
 - to cheeck if the insert data are captured
-  ```sql
+```sql
   select * from cdc.dbo_USERS_CT
 ```
 ![image](https://github.com/user-attachments/assets/8f385641-6235-45f5-8d08-58714bfe0c23)
+- update and delete records
+```sql
+DELETE FROM Users WHERE ID = 1
+UPDATE Users SET LastName = 'Snow' WHERE ID = 2
+DELETE FROM Users WHERE ID = 3
+
+
+select * from cdc.dbo_USERS_CT
+
+```
+and the Result is shown below
+![image](https://github.com/user-attachments/assets/65fbe9df-954f-483d-a732-c633d92da921)
 
 
 
