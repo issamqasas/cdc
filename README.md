@@ -5,7 +5,14 @@ to complete this article you have to be admin on the DB and not using SQL Expres
 Change Data Capture (CDC) is a process that allows detecting, recording, and tracking changes made to data in a Database.  
 Transactional databases indeed store all changes in a transaction log. Change Data Capture (CDC) methods like Log-Based CDC utilize these transaction logs to capture insert, update, and delete operations as they occur.  
 ![image](https://github.com/user-attachments/assets/753324f8-64a9-48fd-81d0-fb97b6df9e7c)
-
+## steps to acheive CDC
+we will asume you have a testDB , and we will create a **user** table as source, and the destination will be a **tagetuser**
+### Check for CDC 
+to check if CDC is enabled on your DB , write the following sql statment
+```sql
+name,is_cdc_enabled from sys.databases
+```
+![image](https://github.com/user-attachments/assets/dc8acc35-41ae-4cbd-a366-b1ef3ff6fcbf)
 
 
 
