@@ -75,13 +75,25 @@ INSERT INTO USERS Values (6, 'mohammad', 'sayed', 'mohammad@gmail.com')
 DELETE FROM Users WHERE ID = 1
 UPDATE Users SET LastName = 'Snow' WHERE ID = 2
 DELETE FROM Users WHERE ID = 3
+```
+and the Result is shown below  
 
+![image](https://github.com/user-attachments/assets/65fbe9df-954f-483d-a732-c633d92da921)
 
-select * from cdc.dbo_USERS_CT
+- when inspecting the cdc table for the source user table
+```sql
+select * from cdc.dbo_USERS_CT 
 
 ```
-and the Result is shown below
-![image](https://github.com/user-attachments/assets/65fbe9df-954f-483d-a732-c633d92da921)
+![image](https://github.com/user-attachments/assets/84275ea1-fda3-417e-9b35-5afa75dbb601)  
+
+The additional columns include
+
+**__$start_lsn and __$end_lsn** that show the commit log sequence number (LSN) assigned by the SQL Server Engine to the recorded change
+**__$seqval** that shows the order of that change related to other changes in the same transaction,  
+**__$operation** that shows the operation type of the change, where 1 = delete, 2 = insert, 3 = update (before change), and 4 = update (after change)  
+**__$update_mask** that is a bit mask defined for each captured column, identifying the updating columns  
+
 
 
 
