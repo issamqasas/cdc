@@ -80,7 +80,7 @@ and the Result is shown below
 
 ![image](https://github.com/user-attachments/assets/65fbe9df-954f-483d-a732-c633d92da921)
 
-- when inspecting the cdc table for the source user table
+- when inspecting the cdc table for the source user table for the last 4 records.
 ```sql
 select * from cdc.dbo_USERS_CT 
 
@@ -93,6 +93,21 @@ The additional columns include
 **__$seqval** that shows the order of that change related to other changes in the same transaction,  
 **__$operation** that shows the operation type of the change, where 1 = delete, 2 = insert, 3 = update (before change), and 4 = update (after change)  
 **__$update_mask** that is a bit mask defined for each captured column, identifying the updating columns  
+
+
+## Notes:-
+_ if you issue an update statment , there will be two records captured with the same **__$start_lsn**
+_ if you inlcude Begin Tran and Commit , then all the records in CDC table will have the same **__$start_lsn**
+```sql
+begin tran
+	DELETE FROM Users WHERE ID = 2
+	INSERT INTO Users Values (2, 'aaaa', 'isa', 'isa@yahoo.com')
+	UPDATE Users SET LastName = 'qasas' WHERE ID = 2
+
+commit
+```
+![image](https://github.com/user-attachments/assets/de9b09be-a81e-40db-97a2-3cf8279fc00b)
+
 
 
 
