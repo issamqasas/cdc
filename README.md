@@ -1,6 +1,7 @@
 # Change Data Capture ( cdc)
 hello world Example that uses LOB BASE CDC for on premise SQL Server  
-to complete this article you have to be admin on the DB and not using SQL Express Edition
+to complete this article you have to be admin on the DB and not using SQL Express Edition and you should have SQL Server Agent Enabled.
+
 ## Definition of change Data Capture
 Change Data Capture (CDC) is a process that allows detecting, recording, and tracking changes made to data in a Database.  
 Transactional databases indeed store all changes in a transaction log. Change Data Capture (CDC) methods like Log-Based CDC utilize these transaction logs to capture insert, update, and delete operations as they occur.  
@@ -96,8 +97,8 @@ The additional columns include
 
 
 ## Notes:-
-_ if you issue an update statment , there will be two records captured with the same **__$start_lsn**
-_ if you inlcude Begin Tran and Commit , then all the records in CDC table will have the same **__$start_lsn**
+- if you issue an update statment , there will be two records captured with the same **__$start_lsn**
+- if you inlcude Begin Tran and Commit , then all the records in CDC table will have the same **__$start_lsn**
 ```sql
 begin tran
 	DELETE FROM Users WHERE ID = 2
