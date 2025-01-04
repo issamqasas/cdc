@@ -118,6 +118,26 @@ FROM
 ```
 ![image](https://github.com/user-attachments/assets/20de07fb-77af-46e1-94b0-4731e62f00ea)
 
+## **step 5: Loading the Data from Source table to Destination table**
+- create the following tables
+- ```sql
+  
+CREATE TABLE [dbo].CDC_Control (
+	[ID] [int] NOT NULL primary key (id),
+	LastLSN  binary(10) NULL,
+	[TableName] [varchar](100) NULL
+	)
+	go
+	
+CREATE TABLE [dbo].[TargetUsers](
+	[ID] [int] NOT NULL primary key (id),
+	[FirstName] [varchar](30) NULL,
+	[LastName] [varchar](30) NULL,
+	[Email] [varchar](50) NULL,
+)
+GO
+```
+
 
 
 
