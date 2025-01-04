@@ -37,6 +37,19 @@ GO
 
 
 - then We have to enable the CDC on the source table, which in our case **users**
+```sql
+
+
+-- Enable CDC for the table
+EXEC sys.sp_cdc_enable_table
+    @source_schema = N'dbo',
+    @source_name = N'Users',
+    @role_name = NULL;
+GO
+```
+![image](https://github.com/user-attachments/assets/fc052167-81bf-4bf7-800f-ff1635078c6d)
+you can see the new system tables ,
+![image](https://github.com/user-attachments/assets/671a47c9-01af-448b-b9f8-7fc6b1e801db)
 
 
 
