@@ -51,6 +51,27 @@ GO
 you can see the new system tables ,
 ![image](https://github.com/user-attachments/assets/671a47c9-01af-448b-b9f8-7fc6b1e801db)
 
+- to check for all tables that have cdc enabled
+  ```sql
+  -- Verify if the table is enabled for CDC
+SELECT * FROM cdc.change_tables;
+GO
+```
+![image](https://github.com/user-attachments/assets/8d48ec74-a2df-4120-8e9c-3ed14ee4ab73)
+
+## **Step 4: Insert values Within The Table(s)**
+```sql
+INSERT INTO Users Values (7, 'ali', 'isa', 'isa@yahoo.com')
+INSERT INTO Users Values (5, 'omar', 'othman', 'omar@yahoo.com')
+INSERT INTO USERS Values (6, 'mohammad', 'sayed', 'mohammad@gmail.com')
+```
+- to cheeck if the insert data are captured
+  ```sql
+  select * from cdc.dbo_USERS_CT
+```
+![image](https://github.com/user-attachments/assets/8f385641-6235-45f5-8d08-58714bfe0c23)
+
+
 
 
 
