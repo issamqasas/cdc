@@ -141,7 +141,7 @@ GO
 ![image](https://github.com/user-attachments/assets/54138cb7-5627-407b-b738-4f66d644d74d)
 
 
-
+### **get Inserted Rows (operation =2) **
 
 
 
