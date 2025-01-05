@@ -131,6 +131,9 @@ FROM
 
 ## **step 5: Loading the Data from Source table to Destination table**
 - create the following tables
+  before inserting new data on users table , you have to make a full load for source users to targetusers , then enable the cdc ,
+  we will assume no one is currently working on users table after the full load and before the enabling of CDC .
+  
 ```sql
   
 CREATE TABLE [dbo].CDC_Control (
