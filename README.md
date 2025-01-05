@@ -156,11 +156,12 @@ GO
 ```sql
 
 --Author :- issam qasas
---date written 4-jan-2025
+--date written 5-jan-2025
 
 create procedure cdc
 as 
 DECLARE @last_lsn BINARY(10);
+	
 
 -- Retrieve the last processed LSN from the control table
 SELECT @last_lsn = LastLSN
@@ -170,12 +171,17 @@ WHERE TableName = 'users';
 
 if @last_lsn is null
 begin
-	SELECT @last_lsn = min(__$start_lsn)	
-	FROM cdc.dbo_Users_CT
-	insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
-
---print @last_lsn
 	begin tran
+	
+	select @last_lsn = min(__$start_lsn)	
+	FROM cdc.dbo_Users_CT
+
+	if @last_lsn is not null
+	begin	
+		insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
+	end
+--print @last_lsn
+	
 ------------- Insert Operation --------------------
 	;WITH LatestInserts AS (
 		SELECT
@@ -223,10 +229,11 @@ begin
 
 	----------------------------------
 	
-	SELECT @last_lsn=  MAX(__$start_lsn) FROM cdc.dbo_users_ct
-
-	insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
-
+		SELECT @last_lsn=  MAX(__$start_lsn) FROM cdc.dbo_users_ct
+	if @last_lsn is not null
+	begin
+		insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
+	end
 	COMMIT TRANSACTION;
 end
 else
