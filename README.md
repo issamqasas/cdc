@@ -213,7 +213,7 @@ set lastlsn=isnull((select max(__$start_lsn) from cdc.dbo_users_CT),0)
 where tablename='users'
 ```
 ### References :-
--https://codingsight.com/implementing-incremental-load-using-change-data-capture-sql-server/  
+- https://codingsight.com/implementing-incremental-load-using-change-data-capture-sql-server/  
 
 
 
