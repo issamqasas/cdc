@@ -158,142 +158,62 @@ GO
 --Author :- issam qasas
 --date written 5-jan-2025
 
-alter procedure cdc
-as 
-DECLARE @last_lsn BINARY(10);
-	
+create procedure cdc_v3 
+as
+declare @lsn binary(10) =
+	(select max(LastLSN) from dbo.cdc_Control
+	where tablename = 'users');
+with incr_Users as
+(
+	select
+		row_number() over
+			(
+				partition by ID
+				order by
+					__$start_lsn desc,
+					__$seqval desc
+			) as __$rn,
+		*
+	from cdc.dbo_users_CT
+	where
+		__$operation <> 3 and
+		__$start_lsn > @lsn
+)
 
--- Retrieve the last processed LSN from the control table
-SELECT @last_lsn = LastLSN
-FROM CDC_Control
-WHERE TableName = 'users';
---print @last_lsn
-
-if @last_lsn is null
-begin
-	begin tran
-	
-	select @last_lsn = min(__$start_lsn)	
-	FROM cdc.dbo_Users_CT
-
---	if @last_lsn is not null
---	begin	
---		insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
---	end
---print @last_lsn
-	
-------------- Insert Operation --------------------
-	;WITH LatestInserts AS (
-		SELECT
-		   id, FirstName, LastName, Email, ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
-		FROM cdc.dbo_users_ct
-		WHERE __$operation = 2  --insert operation
-		AND __$start_lsn >= @last_lsn  -- first time >= , then > only
-	) 
-	INSERT INTO dbo.TargetUsers (id, FirstName, LastName, Email)
-	select id, FirstName, LastName, Email from LatestInserts where seq_rank=1
-	---------------------------------------------------
-	-----------update operation -----------------------
+--select * from incr_Users
 
 
-	;WITH LatestUpdates AS (
-		SELECT
-	*,        ROW_NUMBER() OVER (PARTITION BY ID ORDER BY __$seqval DESC) AS seq_rank
-		FROM cdc.dbo_users_ct
-		WHERE __$operation = 4  -- Update operation
-		AND __$start_lsn >= @Last_LSN  --in the begining , then >
-	)  
-
-	UPDATE tu
-	SET 
-		tu.FirstName = lu.FirstName,
-		tu.LastName = lu.LastName,
-		tu.Email = lu.Email
-    
-	FROM dbo.TargetUsers tu
-	JOIN LatestUpdates lu
-		ON tu.ID = lu.Id
-	WHERE lu.seq_rank = 1;  -- Only the latest version
-
-	-------------------DElete operation-------------------------------
-	;WITH LatestDelete AS (
-		SELECT *,ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
-       
-		 FROM cdc.dbo_users_ct
-		WHERE __$operation in (1,2)  --Delete , insert  operation
-		AND __$start_lsn >= @last_lsn  -- first time >= , then > only
-	) 
-
-	delete tu
-	from dbo.targetusers tu inner join LatestDelete Ld on Ld.id=tu.id  where ld.seq_rank=1 and ld.__$operation=1
-
-	----------------------------------
-	
-		SELECT @last_lsn=  MAX(__$start_lsn) FROM cdc.dbo_users_ct
-	if @last_lsn is not null
-	begin
-		insert into dbo.cdc_Control(id,lastLSN,tablename)values(1,@last_lsn,'Users')
-	end
-	COMMIT TRANSACTION;
-end
-else
-begin
-	begin tran
-	print '> then' 
-	print @last_lsn
-------------- Insert Operation --------------------
-	;WITH LatestInserts AS (
-		SELECT
-		   id, FirstName, LastName, Email, ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
-		FROM cdc.dbo_users_ct
-		WHERE __$operation = 2  --insert operation
-		AND __$start_lsn > @last_lsn  -- first time >= , then > only
-	) 
-	INSERT INTO dbo.TargetUsers (id, FirstName, LastName, Email)
-	select id, FirstName, LastName, Email from LatestInserts where seq_rank=1
-	---------------------------------------------------
-	-----------update operation -----------------------
+, full_Users as
+(
+	select *
+	from dbo.users
+	where id =-1
+)
+, cte_Users as
+(
+select
+	ID, firstname,lastname,Email, __$operation
+from incr_Users
+where __$rn = 1
+union all
+select
+	ID, FirstName,lastname,Email, 2 as __$operation
+from full_Users
+)
+--select * from cte_Users
 
 
-	;WITH LatestUpdates AS (
-		SELECT
-	*,        ROW_NUMBER() OVER (PARTITION BY ID ORDER BY __$seqval DESC) AS seq_rank
-		FROM cdc.dbo_users_ct
-		WHERE __$operation = 4  -- Update operation
-		AND __$start_lsn > @Last_LSN  --in the begining , then >
-	)  
+merge dbo.targetusers as trg using cte_Users as src on trg.ID=src.ID
+when matched and __$operation = 1 then delete
+when matched and __$operation <> 1 then update set trg.FirstName = src.firstname,trg.LAstName=src.LastName,trg.email=src.email
+when not matched by target and __$operation <> 1 then insert (id,firstname, lastname,email) values (src.ID, src.firstname,src.lastname,src.email);
 
-	UPDATE tu
-	SET 
-		tu.FirstName = lu.FirstName,
-		tu.LastName = lu.LastName,
-		tu.Email = lu.Email
-    
-	FROM dbo.TargetUsers tu
-	JOIN LatestUpdates lu
-		ON tu.ID = lu.Id
-	WHERE lu.seq_rank = 1;  -- Only the latest version
-
-	-------------------DElete operation-------------------------------
-	;WITH LatestDelete AS (
-		SELECT *,ROW_NUMBER() OVER (PARTITION BY Id ORDER BY __$seqval desc ) AS seq_rank
-       
-		 FROM cdc.dbo_users_ct
-		WHERE __$operation in (1,2)  --Delete , insert  operation
-		AND __$start_lsn > @last_lsn  -- first time >= , then > only
-	) 
-
-	delete tu
-	from dbo.targetusers tu inner join LatestDelete Ld on Ld.id=tu.id  where ld.seq_rank=1 and ld.__$operation=1
-
-	----------------------------------
-	update dbo.cdc_Control set lastLSN=@last_lsn where tablename='Users'
-
-	COMMIT TRANSACTION;
-
-end
-
+update dbo.cdc_control 
+set lastlsn=isnull((select max(__$start_lsn) from cdc.dbo_users_CT),0)
+where tablename='users'
 ```
+### References :-
+-https://codingsight.com/implementing-incremental-load-using-change-data-capture-sql-server/  
 
 
 
