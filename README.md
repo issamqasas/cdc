@@ -130,6 +130,12 @@ FROM
 ![image](https://github.com/user-attachments/assets/20de07fb-77af-46e1-94b0-4731e62f00ea)
 
 ## **step 5: Loading the Data from Source table to Destination table**
+i will devide this operation into two parts (FUll Load , incremental load )
+the steps as follows
+1. enable the CDC
+2. run the Full_load script
+3. run the incremental script
+    
 - create the following tables
   before inserting new data on users table , you have to make a full load for source users to targetusers , then enable the cdc ,
   we will assume no one is currently working on users table after the full load and before the enabling of CDC .
@@ -137,7 +143,7 @@ FROM
 ```sql
   
 CREATE TABLE [dbo].CDC_Control (
-	[ID] [int] NOT NULL primary key (id),
+	[ID] [bigint] IDENTITY(1,1) NOT NULL primary key (id),
 	LastLSN  binary(10) NULL,
 	[TableName] [varchar](100) NULL
 	)
@@ -152,14 +158,96 @@ CREATE TABLE [dbo].[TargetUsers](
 GO
 ```
 
-### **get Insert /update / delete**
+### **Full Load**
 ```sql
-
---Author :- issam qasas
---date written 5-jan-2025
-
-create procedure cdc_v3 
+USE [TestDB]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[cdc_v3_Full_load] 
 as
+begin try
+
+begin tran
+
+declare @lsn binary(10) =
+	(select max(LastLSN) from dbo.cdc_Control
+	where tablename = 'users');
+with incr_Users as
+(
+	select
+		row_number() over
+			(
+				partition by ID
+				order by
+					__$start_lsn desc,
+					__$seqval desc
+			) as __$rn,
+		*
+	from cdc.dbo_users_CT
+	where
+		__$operation <> 3 and
+		__$start_lsn > @lsn
+)
+
+--select * from incr_Users
+
+
+, full_Users as
+(
+	select *
+	from dbo.users
+	--where id =-1
+)
+, cte_Users as
+(
+select
+	ID, firstname,lastname,Email, __$operation
+from incr_Users
+where __$rn = 1
+union all
+select
+	ID, FirstName,lastname,Email, 2 as __$operation
+from full_Users
+)
+--select * from cte_Users
+
+
+merge dbo.targetusers as trg using cte_Users as src on trg.ID=src.ID
+when matched and __$operation = 1 then delete
+when matched and __$operation <> 1 then update set trg.FirstName = src.firstname,trg.LAstName=src.LastName,trg.email=src.email
+when not matched by target and __$operation <> 1 then insert (id,firstname, lastname,email) values (src.ID, src.firstname,src.lastname,src.email);
+
+insert into dbo.cdc_control (LASTLSN,Tablename)
+values(isnull((select max(__$start_lsn) from cdc.dbo_users_CT),0),'Users')
+
+commit
+end try
+begin catch
+
+Rollback
+
+select ERROR_MESSAGE()
+
+end catch
+```
+### **Full Load**
+```sql
+USE [TestDB]
+GO
+/****** Object:  StoredProcedure [dbo].[cdc_v3_Incremental]    Script Date: 1/6/2025 3:48:38 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[cdc_v3_Incremental] 
+as
+begin try
+
+begin tran
+
 declare @lsn binary(10) =
 	(select max(LastLSN) from dbo.cdc_Control
 	where tablename = 'users');
@@ -208,12 +296,26 @@ when matched and __$operation = 1 then delete
 when matched and __$operation <> 1 then update set trg.FirstName = src.firstname,trg.LAstName=src.LastName,trg.email=src.email
 when not matched by target and __$operation <> 1 then insert (id,firstname, lastname,email) values (src.ID, src.firstname,src.lastname,src.email);
 
-update dbo.cdc_control 
-set lastlsn=isnull((select max(__$start_lsn) from cdc.dbo_users_CT),0)
-where tablename='users'
+insert into dbo.cdc_control (LASTLSN,Tablename)
+values(isnull((select max(__$start_lsn) from cdc.dbo_users_CT),0),'Users')
+
+commit
+end try
+begin catch
+
+Rollback
+
+select ERROR_MESSAGE()
+
+end catch
 ```
 ### References :-
 - https://codingsight.com/implementing-incremental-load-using-change-data-capture-sql-server/  
+- https://estuary.dev/enable-sql-server-change-data-capture/
+- https://towardsdev.com/change-data-capture-example-using-microsoft-sql-server-log-based-cdc-vs-trigger-based-cdc-a848b649e29a
+- https://www.sqlshack.com/change-data-capture-for-auditing-sql-server/
+
+
 
 
 
