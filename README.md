@@ -233,7 +233,7 @@ select ERROR_MESSAGE()
 
 end catch
 ```
-### **Full Load**
+### **incremental Load**
 ```sql
 USE [TestDB]
 GO
