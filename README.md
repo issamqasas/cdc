@@ -1,5 +1,5 @@
 # Change Data Capture ( cdc)
-hello world Example that uses LOB BASE CDC for on premise SQL Server  
+FULL Example for loading data from source to destination  using LOB BASE CDC for on premise SQL Server  
 to complete this article you have to be admin on the DB and not using SQL Express Edition and you should have SQL Server Agent Enabled.
 
 ## Definition of change Data Capture
