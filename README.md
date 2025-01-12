@@ -206,7 +206,8 @@ with incr_Users as
 select
 	ID, firstname,lastname,Email, __$operation
 from incr_Users
-where __$rn = 1
+where __$rn = 1 and __$operation in (1,3)
+
 union all
 select
 	ID, FirstName,lastname,Email, 2 as __$operation
