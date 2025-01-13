@@ -1,4 +1,4 @@
-# Change Data Capture ( cdc)
+  # Change Data Capture ( cdc)
 FULL Example for loading data from source to destination  using LOB BASE CDC for on premise SQL Server  
 to complete this article you have to be admin on the DB and not using SQL Express Edition and you should have SQL Server Agent Enabled.
 
@@ -145,7 +145,8 @@ the steps as follows
 CREATE TABLE [dbo].CDC_Control (
 	[ID] [bigint] IDENTITY(1,1) NOT NULL primary key (id),
 	LastLSN  binary(10) NULL,
-	[TableName] [varchar](100) NULL
+	[TableName] [varchar](100) NULL ,
+        creationdate datetime default (getdate())
 	)
 	go
 	
